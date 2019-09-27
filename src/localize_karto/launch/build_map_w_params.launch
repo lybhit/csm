@@ -1,0 +1,14 @@
+<launch>
+
+  <node pkg="slam_karto" type="slam_karto" name="slam_karto" output="screen">
+    <remap from="scan" to="scan" />
+    <param name="odom_frame" value="odom"/>
+    <param name="map_update_interval" value="25"/>
+    <param name="resolution" value="0.025"/>
+    <param name="rangeThreshold" value="30"/>
+    <param name="first_map_received" value="true"/>
+    <rosparam command="load" file="$(find slam_karto)/config/mapper_params.yaml" />
+  </node>
+
+</launch>
+
