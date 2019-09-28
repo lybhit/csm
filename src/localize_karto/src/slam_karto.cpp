@@ -74,11 +74,8 @@ class SlamKarto
   private:
     bool getLaserPose(karto::Pose2& karto_pose, const ros::Time& t, std::string frame_id);
     karto::LaserRangeFinder* getLaser(const sensor_msgs::LaserScan::ConstPtr& scan);
-    bool addScan(const sensor_msgs::LaserScan::ConstPtr& scan,
-                 karto::Pose2& karto_pose);
+    bool addScan(const sensor_msgs::LaserScan::ConstPtr& scan, karto::Pose2& karto_pose);
     bool updateMap();
-  //  void publishTransform();
-  //  void publishLoop(double transform_publish_period);
 
     void mapReceived(const nav_msgs::OccupancyGridConstPtr& msg);
     void handleMapMessage(const nav_msgs::OccupancyGrid& msg);
@@ -150,24 +147,9 @@ SlamKarto::SlamKarto() :
     base_frame_ = "base_link";
   if(!private_nh_.getParam("throttle_scans", throttle_scans_))
     throttle_scans_ = 100;
-  // double tmp;
-  // if(!private_nh_.getParam("map_update_interval", tmp))
-  //   tmp = 5.0;
-  // map_update_interval_.fromSec(tmp);
-  // if(!private_nh_.getParam("resolution", resolution_))
-  // {
-  //   // Compatibility with slam_gmapping, which uses "delta" to mean
-  //   // resolution
-  //   if(!private_nh_.getParam("delta", resolution_))
-  //     resolution_ = 0.05;
-  // }
-  // double transform_publish_period;
-  // private_nh_.param("transform_publish_period", transform_publish_period, 0.05);
 
   private_nh_.param("first_map_only", first_map_only_, true);
   private_nh_.param("first_map_received", first_map_received_, false);
-
-
 
   tf_ = new TransformListenerWrapper();
 
@@ -178,32 +160,20 @@ SlamKarto::SlamKarto() :
  // sstm_ = nh_.advertise<nav_msgs::MapMetaData>("map_metadata", 1, true);
 //  ss_ = nh_.advertiseService("dynamic_map", &SlamKarto::mapCallback, this);
   laser_scan_sub_ = new message_filters::Subscriber<sensor_msgs::LaserScan>(nh_, "scan", 100);
-  laser_scan_filter_ = 
-          new tf::MessageFilter<sensor_msgs::LaserScan>(*laser_scan_sub_, 
-                                                        *tf_, 
-                                                        odom_frame_, 
-                                                        100);
-  laser_scan_filter_->registerCallback(boost::bind(&SlamKarto::laserCallback,
-                                                   this, _1));
- // marker_publisher_ = nh_.advertise<visualization_msgs::MarkerArray>("visualization_marker_array",1);
 
-  // Create a thread to periodically publish the latest map->odom
-  // transform; it needs to go out regularly, uninterrupted by potentially
-  // long periods of computation in our main loop.
-//  transform_thread_ = new boost::thread(boost::bind(&SlamKarto::publishLoop, this, transform_publish_period));
+  laser_scan_filter_ = new tf::MessageFilter<sensor_msgs::LaserScan>(*laser_scan_sub_, 
+                                                                      *tf_, 
+                                                                      odom_frame_, 
+                                                                      100);
+
+  laser_scan_filter_->registerCallback(boost::bind(&SlamKarto::laserCallback, this, _1));
+
   map_sub_ = nh_.subscribe("map", 1, &SlamKarto::mapReceived, this);
-    ROS_INFO("Subscribed to map topic.");
+  
+  ROS_INFO("Subscribed to map topic.");
 
   // Initialize Karto structures
   mapper_ = new karto::Mapper();
-
-  // Setting General Parameters from the Parameter Server
-  
-  // kt_bool use_scan_barycenter;
-  // if(private_nh_.getParam("use_scan_barycenter", use_scan_barycenter))
-  //   mapper_->setParamUseScanBarycenter(use_scan_barycenter);
-
-  // Setting Correlation Parameters from the Parameter Server
 
   kt_double correlation_search_space_dimension;
   private_nh_.param("correlation_search_space_dimension", correlation_search_space_dimension, 0.3);
@@ -214,11 +184,10 @@ SlamKarto::SlamKarto() :
   mapper_->setParamCorrelationSearchSpaceResolution(correlation_search_space_resolution);
 
   kt_double correlation_search_space_smear_deviation;
-  private_nh_.param("correlation_search_space_smear_deviation", correlation_search_space_smear_deviation, 0.03);
+  private_nh_.param("correlation_search_space_smear_deviation", correlation_search_space_smear_deviation, 0.08);
   mapper_->setParamCorrelationSearchSpaceSmearDeviation(correlation_search_space_smear_deviation);
 
   // Setting Correlation Parameters, Loop Closure Parameters from the Parameter Server
-
 
   // Setting Scan Matcher Parameters from the Parameter Server
 
@@ -251,7 +220,7 @@ SlamKarto::SlamKarto() :
   mapper_->setParamMinimumDistancePenalty(minimum_distance_penalty);
 
   kt_bool use_response_expansion;
-  private_nh_.param("use_response_expansion", use_response_expansion, false);
+  private_nh_.param("use_response_expansion", use_response_expansion, true);
   mapper_->setParamUseResponseExpansion(use_response_expansion);
 
   private_nh_.param("rangeThreshold", rangeThreshold_, 15.0);
@@ -260,11 +229,7 @@ SlamKarto::SlamKarto() :
 
 SlamKarto::~SlamKarto()
 {
-  // if(transform_thread_)
-  // {
-  //   transform_thread_->join();
-  //   delete transform_thread_;
-  // }
+
   if (laser_scan_sub_)
     delete laser_scan_sub_;
   if (laser_scan_filter_)
@@ -280,27 +245,6 @@ SlamKarto::~SlamKarto()
   // I'm supposed to do that.
 }
 
-// void
-// SlamKarto::publishLoop(double transform_publish_period)
-// {
-//   if(transform_publish_period == 0)
-//     return;
-
-//   ros::Rate r(1.0 / transform_publish_period);
-//   while(ros::ok())
-//   {
-//     publishTransform();
-//     r.sleep();
-//   }
-// }
-
-// void
-// SlamKarto::publishTransform()
-// {
-//   boost::mutex::scoped_lock lock(map_to_odom_mutex_);
-//   ros::Time tf_expiration = ros::Time::now() + ros::Duration(0.05);
-//   tfB_->sendTransform(tf::StampedTransform (map_to_odom_, ros::Time::now(), map_frame_, odom_frame_));
-// }
 
 karto::LaserRangeFinder*
 SlamKarto::getLaser(const sensor_msgs::LaserScan::ConstPtr& scan)
@@ -313,9 +257,7 @@ SlamKarto::getLaser(const sensor_msgs::LaserScan::ConstPtr& scan)
     std::string name = scan->header.frame_id;
     karto::LaserRangeFinder* laser = 
       karto::LaserRangeFinder::CreateLaserRangeFinder();
-    // laser->SetOffsetPose(0.,
-    //           0.,
-    //           0.));
+
     laser->SetMinimumRange(scan->range_min);
     laser->SetMaximumRange(scan->range_max);
     laser->SetMinimumAngle(scan->angle_min);
@@ -333,9 +275,7 @@ SlamKarto::getLaser(const sensor_msgs::LaserScan::ConstPtr& scan)
 bool
 SlamKarto::getLaserPose(karto::Pose2& karto_pose, const ros::Time& t, std::string frame_id)
 {
-  // Get the robot's pose
-  // tf::Stamped<tf::Pose> ident (tf::Transform(tf::createQuaternionFromRPY(0,0,0),
-  //                                          tf::Vector3(0,0,0)), t, base_frame_);
+  // Get the laser's pose
 
   tf::Stamped<tf::Pose> ident (tf::Transform(tf::createQuaternionFromRPY(0,0,0),
                                            tf::Vector3(0,0,0)), t, frame_id);
@@ -344,7 +284,6 @@ SlamKarto::getLaserPose(karto::Pose2& karto_pose, const ros::Time& t, std::strin
   try
   {
      tf_->transformPose(map_frame_, ident, laser_pose);
-    // this->tf_->transform(ident, laser_pose, map_frame_);
   }
   catch(tf2::TransformException e)
   {
@@ -392,10 +331,7 @@ SlamKarto::laserCallback(const sensor_msgs::LaserScan::ConstPtr& scan)
     karto::Pose2 laser_pose;
     if(addScan(scan, laser_pose))
     {
-      ROS_DEBUG("added scan at pose: %.3f %.3f %.3f", 
-              laser_pose.GetX(),
-              laser_pose.GetY(),
-              laser_pose.GetHeading());
+      ROS_DEBUG("added scan at pose: %.3f %.3f %.3f", laser_pose.GetX(),laser_pose.GetY(),laser_pose.GetHeading());
     }
   }
   
@@ -478,35 +414,22 @@ SlamKarto::convertMap(const nav_msgs::OccupancyGrid& map_msg)
   ROS_INFO("map width = %d", map_msg.info.width);
   ROS_INFO("map height = %d", map_msg.info.height);
 
-
-
   // Occupancy state (-1 = free, 0 = unknown, +1 = occ) from amcl
-
-  int a = 0;
-  int b = 0;
-  int c = 0;
 
   for(int i=0;i< map_msg.info.width * map_msg.info.height;i++)
   {
     if(map_msg.data[i] == 0)
     {
       m_pCorrelationGrid_->GetDataPointer()[i]  = GridStates_Free;//free
-      a++;
     }
     else if(map_msg.data[i] == 100)
     {
       m_pCorrelationGrid_->GetDataPointer()[i] = GridStates_Occupied;//occ
-      b++;
     }
     else{
       m_pCorrelationGrid_->GetDataPointer()[i]= GridStates_Unknown;//unknown
-      c++;
     }
   }
-
-  std::cout<< "a = "<< a <<std::endl;
-  std::cout<< "b = "<< b <<std::endl;
-  std::cout<< "c = "<< c <<std::endl;
 
   // for(int i=0;i< map_msg.info.width * map_msg.info.height;i++)
   // {
@@ -515,8 +438,6 @@ SlamKarto::convertMap(const nav_msgs::OccupancyGrid& map_msg)
 
   // for(int i = 0; i < 60; ++i)
   //     std::cout<< "m_pCorrelationGrid data i = "<< static_cast<int>(m_pCorrelationGrid_->GetDataPointer()[i])<<std::endl;
-
-
 
   karto::Vector2<kt_double> offset;
   offset.SetX(map_msg.info.origin.position.x);
@@ -530,26 +451,15 @@ SlamKarto::convertMap(const nav_msgs::OccupancyGrid& map_msg)
   {
     std::cout <<"create scanmatcher!!!"<<std::endl;
     scanmatcher_ = karto::ScanMatcher::Create(mapper_,
-                               mapper_->m_pCorrelationSearchSpaceDimension->GetValue(),
-                               mapper_->m_pCorrelationSearchSpaceResolution->GetValue(),
-                               mapper_->m_pCorrelationSearchSpaceSmearDeviation->GetValue(),
-                               rangeThreshold_,
-                               m_pCorrelationGrid_);
-
-    // for(int i = 0; i < 60; ++i)
-    //   std::cout<< "m_pCorrelationGrid data i = "<< m_pCorrelationGrid_->GetDataPointer()[i]<<std::endl;
-
-
-    // for(int i=0;i< map_msg.info.width * map_msg.info.height;i++)
-    // {
-    //   ROS_INFO("occpancy value of correlation grid: %d, score: %d", i, m_pCorrelationGrid_->GetDataPointer()[i]);
-    // }
+                                             mapper_->m_pCorrelationSearchSpaceDimension->GetValue(),
+                                             mapper_->m_pCorrelationSearchSpaceResolution->GetValue(),
+                                             mapper_->m_pCorrelationSearchSpaceSmearDeviation->GetValue(),
+                                             rangeThreshold_,
+                                             m_pCorrelationGrid_);
 
   }
 
-  ROS_INFO("Grid is ok to use!!!");
-
-  
+  ROS_INFO("Grid is ok to use!!!"); 
 }
 
 

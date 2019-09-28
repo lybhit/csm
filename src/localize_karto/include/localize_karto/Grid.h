@@ -901,8 +901,8 @@ typedef enum
      */
     virtual ~CorrelationGrid()
     {
-      // if(m_pKernel)
-      //   delete [] m_pKernel;
+       if(m_pKernel)
+         delete [] m_pKernel;
     }
 
   public:
@@ -970,41 +970,47 @@ typedef enum
      * Smear cell if the cell at the given point is marked as "occupied"
      * @param rGridPoint
      */
-    // inline void SmearPoint(const Vector2<kt_int32s>& rGridPoint)
-    // {
-    //   assert(m_pKernel != NULL);
+    inline void SmearPoint(const kt_int32s& index)
+    {
+      assert(m_pKernel != NULL);
 
-    //   int gridIndex = GridIndex(rGridPoint);
-    //   if (GetDataPointer()[gridIndex] != GridStates_Occupied)
-    //   {
-    //     return;
-    //   }
+      if (GetDataPointer()[index] != GridStates_Occupied)
+      {
+        return;
+      }
 
-    //   kt_int32s halfKernel = m_KernelSize / 2;
+      kt_int32s halfKernel = m_KernelSize / 2;
 
-    //   // apply kernel
-    //   for (kt_int32s j = -halfKernel; j <= halfKernel; j++)
-    //   {
-    //     kt_int8u* pGridAdr = GetDataPointer(Vector2<kt_int32s>(rGridPoint.GetX(), rGridPoint.GetY() + j));
+      // apply kernel
+      for (kt_int32s j = -halfKernel; j <= halfKernel; j++)
+      {
+        kt_int32s offset = index + j * GetWidth();
 
-    //     kt_int32s kernelConstant = (halfKernel) + m_KernelSize * (j + halfKernel);
+        if(offset < halfKernel || offset > GetWidth()*GetHeight()-halfKernel)
+        {
+          continue;
+        }
 
-    //     // if a point is on the edge of the grid, there is no problem
-    //     // with running over the edge of allowable memory, because
-    //     // the grid has margins to compensate for the kernel size
-    //     for (kt_int32s i = -halfKernel; i <= halfKernel; i++)
-    //     {
-    //       kt_int32s kernelArrayIndex = i + kernelConstant;
+        kt_int8u* pGridAdr = GetDataPointer() + offset;
 
-    //       kt_int8u kernelValue = m_pKernel[kernelArrayIndex];
-    //       if (kernelValue > pGridAdr[i])
-    //       {
-    //         // kernel value is greater, so set it to kernel value
-    //         pGridAdr[i] = kernelValue;
-    //       }
-    //     }
-    //   }
-    // }
+        kt_int32s kernelConstant = (halfKernel) + m_KernelSize * (j + halfKernel);
+
+        // if a point is on the edge of the grid, there is no problem
+        // with running over the edge of allowable memory, because
+        // the grid has margins to compensate for the kernel size
+        for (kt_int32s i = -halfKernel; i <= halfKernel; i++)
+        {
+          kt_int32s kernelArrayIndex = i + kernelConstant;
+
+          kt_int8u kernelValue = m_pKernel[kernelArrayIndex];
+          if (kernelValue > pGridAdr[i])
+          {
+            // kernel value is greater, so set it to kernel value
+            pGridAdr[i] = kernelValue;
+          }
+        }
+      }
+    }
 
   protected:
     /**
@@ -1045,68 +1051,68 @@ typedef enum
        m_Roi = Rectangle2<kt_int32s>(borderSize, borderSize, width, height);
 
       // calculate kernel
-      // CalculateKernel();
+       CalculateKernel();
     }
 
     /**
      * Sets up the kernel for grid smearing.
      */
-//     virtual void CalculateKernel()
-//     {
-//       kt_double resolution = GetResolution();
+    virtual void CalculateKernel()
+    {
+      kt_double resolution = GetResolution();
 
-//       assert(resolution != 0.0);
-//       assert(m_SmearDeviation != 0.0);
+      assert(resolution != 0.0);
+      assert(m_SmearDeviation != 0.0);
 
-//       // min and max distance deviation for smearing;
-//       // will smear for two standard deviations, so deviation must be at least 1/2 of the resolution
-//       const kt_double MIN_SMEAR_DISTANCE_DEVIATION = 0.5 * resolution;
-//       const kt_double MAX_SMEAR_DISTANCE_DEVIATION = 10 * resolution;
+      // min and max distance deviation for smearing;
+      // will smear for two standard deviations, so deviation must be at least 1/2 of the resolution
+      const kt_double MIN_SMEAR_DISTANCE_DEVIATION = 0.5 * resolution;
+      const kt_double MAX_SMEAR_DISTANCE_DEVIATION = 10 * resolution;
 
-//       // check if given value too small or too big
-//       if (!math::InRange(m_SmearDeviation, MIN_SMEAR_DISTANCE_DEVIATION, MAX_SMEAR_DISTANCE_DEVIATION))
-//       {
-//         std::stringstream error;
-//         error << "Mapper Error:  Smear deviation too small:  Must be between "
-//               << MIN_SMEAR_DISTANCE_DEVIATION
-//               << " and "
-//               << MAX_SMEAR_DISTANCE_DEVIATION;
-//         throw std::runtime_error(error.str());
-//       }
+      // check if given value too small or too big
+      if (!math::InRange(m_SmearDeviation, MIN_SMEAR_DISTANCE_DEVIATION, MAX_SMEAR_DISTANCE_DEVIATION))
+      {
+        std::stringstream error;
+        error << "Mapper Error:  Smear deviation too small:  Must be between "
+              << MIN_SMEAR_DISTANCE_DEVIATION
+              << " and "
+              << MAX_SMEAR_DISTANCE_DEVIATION;
+        throw std::runtime_error(error.str());
+      }
 
-//       // NOTE:  Currently assumes a two-dimensional kernel
+      // NOTE:  Currently assumes a two-dimensional kernel
 
-//       // +1 for center
-//       m_KernelSize = 2 * GetHalfKernelSize(m_SmearDeviation, resolution) + 1;
+      // +1 for center
+      m_KernelSize = 2 * GetHalfKernelSize(m_SmearDeviation, resolution) + 1;
 
-//       // allocate kernel
-//       m_pKernel = new kt_int8u[m_KernelSize * m_KernelSize];
-//       if (m_pKernel == NULL)
-//       {
-//         throw std::runtime_error("Unable to allocate memory for kernel!");
-//       }
+      // allocate kernel
+      m_pKernel = new kt_int8u[m_KernelSize * m_KernelSize];
+      if (m_pKernel == NULL)
+      {
+        throw std::runtime_error("Unable to allocate memory for kernel!");
+      }
 
-//       // calculate kernel
-//       kt_int32s halfKernel = m_KernelSize / 2;
-//       for (kt_int32s i = -halfKernel; i <= halfKernel; i++)
-//       {
-//         for (kt_int32s j = -halfKernel; j <= halfKernel; j++)
-//         {
-// #ifdef WIN32
-//           kt_double distanceFromMean = _hypot(i * resolution, j * resolution);
-// #else
-//           kt_double distanceFromMean = hypot(i * resolution, j * resolution);
-// #endif
-//           kt_double z = exp(-0.5 * pow(distanceFromMean / m_SmearDeviation, 2));
+      // calculate kernel
+      kt_int32s halfKernel = m_KernelSize / 2;
+      for (kt_int32s i = -halfKernel; i <= halfKernel; i++)
+      {
+        for (kt_int32s j = -halfKernel; j <= halfKernel; j++)
+        {
+#ifdef WIN32
+          kt_double distanceFromMean = _hypot(i * resolution, j * resolution);
+#else
+          kt_double distanceFromMean = hypot(i * resolution, j * resolution);
+#endif
+          kt_double z = exp(-0.5 * pow(distanceFromMean / m_SmearDeviation, 2));
 
-//           kt_int32u kernelValue = static_cast<kt_int32u>(math::Round(z * GridStates_Occupied));
-//           assert(math::IsUpTo(kernelValue, static_cast<kt_int32u>(255)));
+          kt_int32u kernelValue = static_cast<kt_int32u>(math::Round(z * GridStates_Occupied));
+          assert(math::IsUpTo(kernelValue, static_cast<kt_int32u>(255)));
 
-//           int kernelArrayIndex = (i + halfKernel) + m_KernelSize * (j + halfKernel);
-//           m_pKernel[kernelArrayIndex] = static_cast<kt_int8u>(kernelValue);
-//         }
-//       }
-//     }
+          int kernelArrayIndex = (i + halfKernel) + m_KernelSize * (j + halfKernel);
+          m_pKernel[kernelArrayIndex] = static_cast<kt_int8u>(kernelValue);
+        }
+      }
+    }
 
     /**
      * Computes the kernel half-size based on the smear distance and the grid resolution.
@@ -1130,10 +1136,10 @@ typedef enum
     kt_double m_SmearDeviation;
 
     // Size of one side of the kernel
-    // kt_int32s m_KernelSize;
+     kt_int32s m_KernelSize;
 
     // Cached kernel for smearing
-    // kt_int8u* m_pKernel;
+     kt_int8u* m_pKernel;
 
     // region of interest
      Rectangle2<kt_int32s> m_Roi;

@@ -72,12 +72,12 @@ ScanMatcher::~ScanMatcher()
 
     ScanMatcher* pScanMatcher = new ScanMatcher(pMapper);
 
-    std::cout<< "ok, it is now to make a grid"<<std::endl;
+    // std::cout<< "ok, it is now to make a grid"<<std::endl;
 
-    std::cout<< "m_pCorrelationGrid " << pCorrelationGrid<<std::endl; 
+    // std::cout<< "m_pCorrelationGrid " << pCorrelationGrid<<std::endl; 
 
-    for(int i = 0; i < 60; ++i)
-      std::cout<< "pCorrelationGrid data i = "<< pCorrelationGrid->GetDataPointer()[i]<<std::endl;
+    // for(int i = 0; i < 60; ++i)
+    //   std::cout<< "pCorrelationGrid data i = "<< pCorrelationGrid->GetDataPointer()[i]<<std::endl;
 
     pScanMatcher->m_pCorrelationGrid = pCorrelationGrid;
     pScanMatcher->m_pSearchSpaceProbs = pSearchSpaceProbs;
@@ -87,6 +87,12 @@ ScanMatcher::~ScanMatcher()
     //   std::cout<< "pCorrelationGrid data i = "<< pCorrelationGrid->GetDataPointer()[i]<<std::endl;
 
     pScanMatcher->m_pGridLookup = new GridIndexLookup<kt_int8u>(pCorrelationGrid);
+
+    for(kt_int32s i = 0; i < pCorrelationGrid->GetDataSize(); ++i)
+    {
+      pCorrelationGrid->SmearPoint(i);
+
+    }
 
     return pScanMatcher;
   }
