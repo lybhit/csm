@@ -14,12 +14,11 @@ find_package(catkin REQUIRED
     rosconsole
     roscpp
     sensor_msgs
-#    sparse_bundle_adjustment
+    std_srvs
     tf 
-#    visualization_msgs
 )
 
-find_package(Boost REQUIRED COMPONENTS thread)
+#find_package(Boost REQUIRED COMPONENTS thread)
 #find_package(Eigen3 REQUIRED)
 
 include_directories(${catkin_INCLUDE_DIRS} ${EIGEN_INCLUDE_DIRS})
@@ -32,7 +31,6 @@ catkin_package(
 #    rosbag
     roscpp
     sensor_msgs
-#    std_srvs
     tf
   DEPENDS Boost
   INCLUDE_DIRS include

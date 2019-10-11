@@ -232,8 +232,10 @@ typedef enum
      */
     virtual ~Grid()
     {
+
       delete [] m_pData;
       delete m_pCoordinateConverter;
+      std::cout<< "Deconstruction Grid" <<std::endl;
     }
 
   public:
@@ -556,6 +558,9 @@ typedef enum
 
       delete[] m_pArray;
       m_pArray = NULL;
+
+      std::cout<< "Deconstruction LookupArray" <<std::endl;
+
     }
 
   public:
@@ -583,11 +588,13 @@ typedef enum
     void SetSize(kt_int32u size)
     {
       assert(size != 0);
-
+      std::cout << "lookup m_Capacity = " << m_Capacity << std::endl;
       if (size > m_Capacity)
       {
+        std::cout << "lookup new size = " << size << std::endl;
         if (m_pArray != NULL)
         {
+          std::cout << "lookup size is bigger, rebuild the LookupArray."<<std::endl;
           delete [] m_pArray;
         }
         m_Capacity = size;
@@ -679,7 +686,7 @@ typedef enum
       // for(int i = 0; i < 6000; ++i)
       //   std::cout<<"m_pGrid data i = " << static_cast<int>(m_pGrid->GetDataPointer()[i])<< std::endl;
 
-      std::cout<<"m_pGrid_X = "<< m_pGrid->GetCoordinateConverter()->GetOffset().GetX()<<std::endl;
+      // std::cout<<"m_pGrid_X = "<< m_pGrid->GetCoordinateConverter()->GetOffset().GetX()<<std::endl;
     }
 
     /**
@@ -719,7 +726,7 @@ typedef enum
      * @param angleOffset computes lookup arrays for the angles within this offset around angleStart
      * @param angleResolution how fine a granularity to compute lookup arrays in the angular space
      */
-    void ComputeOffsets(LocalizedRangeScan* pScan,
+    void ComputeOffsets(std::shared_ptr<LocalizedRangeScan> pScan,
                         kt_double angleCenter,
                         kt_double angleOffset,
                         kt_double angleResolution)
@@ -747,14 +754,14 @@ typedef enum
         localPoints.push_back(vec);
       }
 
-      std::cout<<"localpoints size is "<< localPoints.size()<<std::endl;
+      // std::cout<<"localpoints size is "<< localPoints.size()<<std::endl;
 
       //////////////////////////////////////////////////////
       // create lookup array for different angles
       kt_double angle = 0.0;
       kt_double startAngle = angleCenter - angleOffset;
 
-      std::cout<<"startAngle = "<<startAngle<<std::endl;
+      // std::cout<<"startAngle = "<<startAngle<<std::endl;
 
       for (kt_int32u angleIndex = 0; angleIndex < nAngles; angleIndex++)
       {
@@ -771,11 +778,11 @@ typedef enum
      * @param angle
      * @param rLocalPoints
      */
-    void ComputeOffsets(kt_int32u angleIndex, kt_double angle, const Pose2Vector& rLocalPoints, LocalizedRangeScan* pScan)
+    void ComputeOffsets(kt_int32u angleIndex, kt_double angle, const Pose2Vector& rLocalPoints, std::shared_ptr<LocalizedRangeScan> pScan)
     {
-      std::cout<<"ComputeOffsets"<<std::endl;
+      // std::cout<<"ComputeOffsets"<<std::endl;
 
-      std::cout<<"number of LocalPoints = "<<static_cast<kt_int32u>(rLocalPoints.size())<<std::endl;
+      // std::cout<<"number of LocalPoints = "<<static_cast<kt_int32u>(rLocalPoints.size())<<std::endl;
 
       m_ppLookupArray[angleIndex]->SetSize(static_cast<kt_int32u>(rLocalPoints.size()));
       m_Angles.at(angleIndex) = angle;
@@ -788,7 +795,7 @@ typedef enum
       // for(int i = 0; i < 600; ++i)
       //   std::cout<<"m_pGrid data i = " << m_pGrid->GetDataPointer()[i]<< std::endl;
 
-      std::cout<<"m_pGrid offset X = "<<m_pGrid->GetCoordinateConverter()->GetOffset().GetX()<<std::endl;
+      // std::cout<<"m_pGrid offset X = "<<m_pGrid->GetCoordinateConverter()->GetOffset().GetX()<<std::endl;
 
       //std::cout<<"m_pGrid offset Y = "<<m_pGrid->GetCoordinateConverter()->GetOffset().GetY()<<std::endl;
 
@@ -835,7 +842,7 @@ typedef enum
         readingIndex++;
       }
 
-      std::cout<<"num of readingindex = "<<readingIndex<<std::endl;
+      // std::cout<<"num of readingindex = "<<readingIndex<<std::endl;
       assert(readingIndex == rLocalPoints.size());
     }
 
@@ -851,13 +858,20 @@ typedef enum
       {
         if (m_ppLookupArray != NULL)
         {
+          std::cout << "pplookuparray build!"<< std::endl; 
           DestroyArrays();
         }
 
         m_Capacity = size;
         m_ppLookupArray = new LookupArray*[m_Capacity];
+
+        std::cout << "lookuparray build!"<< std::endl;
+        std::cout << "m_Capacity = "<< m_Capacity <<std::endl;
+
+
         for (kt_int32u i = 0; i < m_Capacity; i++)
         {
+
           m_ppLookupArray[i] = new LookupArray();
         }
       }
@@ -879,6 +893,8 @@ typedef enum
 
       delete[] m_ppLookupArray;
       m_ppLookupArray = NULL;
+
+      std::cout<<"Deconstruction LookupArray"<<std::endl;
     }
 
   private:
@@ -903,6 +919,7 @@ typedef enum
     {
        if(m_pKernel)
          delete [] m_pKernel;
+       std::cout<<"Deconstruction CorrelationGrid"<<std::endl;
     }
 
   public:
@@ -942,8 +959,8 @@ typedef enum
       kt_int32s x = rGrid.GetX() + m_Roi.GetX();
       kt_int32s y = rGrid.GetY() + m_Roi.GetY();
 
-      std::cout<< "m_Roi X = " << m_Roi.GetX() <<std::endl;
-      std::cout<< "m_Roi Y = " << m_Roi.GetY() <<std::endl;
+      // std::cout<< "m_Roi X = " << m_Roi.GetX() <<std::endl;
+      // std::cout<< "m_Roi Y = " << m_Roi.GetY() <<std::endl;
 
       return Grid<kt_int8u>::GridIndex(Vector2<kt_int32s>(x, y), boundaryCheck);
     }

@@ -63,7 +63,7 @@ namespace karto
      * @param doRefineMatch whether to do finer-grained matching if coarse match is good (default is true)
      * @return strength of response
      */
-    kt_double MatchScan(LocalizedRangeScan* pScan,
+    kt_double MatchScan(std::shared_ptr<LocalizedRangeScan> pScan,
                         Pose2& rMean, Matrix3& rCovariance,
                         kt_bool doPenalize = true,
                         kt_bool doRefineMatch = true);
@@ -84,7 +84,7 @@ namespace karto
      * @param doingFineMatch whether to do a finer search after coarse search
      * @return strength of response
      */
-    kt_double CorrelateScan(LocalizedRangeScan* pScan,
+    kt_double CorrelateScan(std::shared_ptr<LocalizedRangeScan> pScan,
                             const Pose2& rSearchCenter,
                             const Vector2<kt_double>& rSearchSpaceOffset,
                             const Vector2<kt_double>& rSearchSpaceResolution,

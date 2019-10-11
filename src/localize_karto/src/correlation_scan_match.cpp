@@ -14,7 +14,7 @@
 #include <stdio.h>
 #include <assert.h>
 #include <string.h>
-#include <boost/thread.hpp>
+// #include <boost/thread.hpp>
 
 #include "localize_karto/correlation_scan_match.h"
 
@@ -23,7 +23,7 @@ namespace karto
 ScanMatcher::~ScanMatcher()
   {
   //  delete m_pCorrelationGrid;
-    m_pCorrelationGrid = NULL;
+    // m_pCorrelationGrid = NULL;
     delete m_pSearchSpaceProbs;
     delete m_pGridLookup;
 
@@ -107,7 +107,7 @@ ScanMatcher::~ScanMatcher()
    * @param doRefineMatch whether to do finer-grained matching if coarse match is good (default is true)
    * @return strength of response
    */
-  kt_double ScanMatcher::MatchScan(LocalizedRangeScan* pScan, Pose2& rMean,
+  kt_double ScanMatcher::MatchScan(std::shared_ptr<LocalizedRangeScan> pScan, Pose2& rMean,
                                    Matrix3& rCovariance, kt_bool doPenalize, kt_bool doRefineMatch)
   {
     ////////////////////1///////////////////
@@ -199,6 +199,7 @@ ScanMatcher::~ScanMatcher()
 
     if (doRefineMatch)
     {
+      std::cout<< "Doing refine match"<<std::endl;
       Vector2<kt_double> fineSearchOffset(coarseSearchResolution * 0.5);
       Vector2<kt_double> fineSearchResolution(m_pCorrelationGrid->GetResolution(), m_pCorrelationGrid->GetResolution());
       bestResponse = CorrelateScan(pScan, rMean, fineSearchOffset, fineSearchResolution,
@@ -232,7 +233,7 @@ ScanMatcher::~ScanMatcher()
    * @param doingFineMatch whether to do a finer search after coarse search
    * @return strength of response
    */
-  kt_double ScanMatcher::CorrelateScan(LocalizedRangeScan* pScan, const Pose2& rSearchCenter,
+  kt_double ScanMatcher::CorrelateScan(std::shared_ptr<LocalizedRangeScan> pScan, const Pose2& rSearchCenter,
                                        const Vector2<kt_double>& rSearchSpaceOffset,
                                        const Vector2<kt_double>& rSearchSpaceResolution,
                                        kt_double searchAngleOffset, kt_double searchAngleResolution,
@@ -261,9 +262,9 @@ ScanMatcher::~ScanMatcher()
     kt_int32u nX = static_cast<kt_int32u>(math::Round(rSearchSpaceOffset.GetX() *
                                           2.0 / rSearchSpaceResolution.GetX()) + 1);
 
-    std::cout<<"SearchSpaceOffset_X"<< rSearchSpaceOffset.GetX() << std::endl;
+    // std::cout<<"SearchSpaceOffset_X"<< rSearchSpaceOffset.GetX() << std::endl;
 
-    std::cout<<"SearchSpaceResolution_X"<< rSearchSpaceResolution.GetX() << std::endl;
+    // std::cout<<"SearchSpaceResolution_X"<< rSearchSpaceResolution.GetX() << std::endl;
 
 
 
@@ -296,11 +297,11 @@ ScanMatcher::~ScanMatcher()
     // calculate pose response array size
     kt_int32u nAngles = static_cast<kt_int32u>(math::Round(searchAngleOffset * 2.0 / searchAngleResolution) + 1);
 
-    std::cout<<"nAngles numbers = "<< nAngles << std::endl;
+    // std::cout<<"nAngles numbers = "<< nAngles << std::endl;
 
     kt_int32u poseResponseSize = static_cast<kt_int32u>(xPoses.size() * yPoses.size() * nAngles);
 
-    std::cout<<"loop numbers = "<< poseResponseSize << std::endl;
+    // std::cout<<"loop numbers = "<< poseResponseSize << std::endl;
 
     // allocate array
     std::pair<kt_double, Pose2>* pPoseResponse = new std::pair<kt_double, Pose2>[poseResponseSize];
@@ -308,11 +309,11 @@ ScanMatcher::~ScanMatcher()
     Vector2<kt_int32s> startGridPoint = m_pCorrelationGrid->WorldToGrid(Vector2<kt_double>(rSearchCenter.GetX()
                                                                         + startX, rSearchCenter.GetY() + startY));
 
-    std::cout<<"startGridPoint_World_X "<< rSearchCenter.GetX() + startX << std::endl;
-    std::cout<<"startGridPoint_World_Y "<< rSearchCenter.GetY() + startY << std::endl;
+    // std::cout<<"startGridPoint_World_X "<< rSearchCenter.GetX() + startX << std::endl;
+    // std::cout<<"startGridPoint_World_Y "<< rSearchCenter.GetY() + startY << std::endl;
 
-    std::cout<<"startGridPoint_Grid_X "<< startGridPoint.GetX() << std::endl;
-    std::cout<<"startGridPoint_Grid_Y "<< startGridPoint.GetY() << std::endl;
+    // std::cout<<"startGridPoint_Grid_X "<< startGridPoint.GetX() << std::endl;
+    // std::cout<<"startGridPoint_Grid_Y "<< startGridPoint.GetY() << std::endl;
 
     kt_int32u poseResponseCounter = 0;
     forEachAs(std::vector<kt_double>, &yPoses, yIter)
@@ -320,7 +321,7 @@ ScanMatcher::~ScanMatcher()
       kt_double y = *yIter;
       kt_double newPositionY = rSearchCenter.GetY() + y;
 
-      std::cout<<"rSearchCenter_Y "<< rSearchCenter.GetY() << std::endl;
+      // std::cout<<"rSearchCenter_Y "<< rSearchCenter.GetY() << std::endl;
 
       kt_double squareY = math::Square(y);
 
@@ -769,12 +770,12 @@ ScanMatcher::~ScanMatcher()
   {
     kt_double response = 0.0;
 
-    std::cout<<"To get the score!!!"<<std::endl;
+    //std::cout<<"To get the score!!!"<<std::endl;
 
     // add up value for each point
     kt_int8u* pByte = m_pCorrelationGrid->GetDataPointer() + gridPositionIndex;
 
-    std::cout<<"*pByte"<< *pByte <<std::endl;
+    //std::cout<<"*pByte"<< *pByte <<std::endl;
 
     const LookupArray* pOffsets = m_pGridLookup->GetLookupArray(angleIndex);
     assert(pOffsets != NULL);
@@ -803,13 +804,13 @@ ScanMatcher::~ScanMatcher()
       response += pByte[pAngleIndexPointer[i]];
     }
 
-    std::cout<< "nPoints = " << nPoints << std::endl;
-    std::cout<< "GridStates_Occupied = " << GridStates_Occupied << std::endl;
+    // std::cout<< "nPoints = " << nPoints << std::endl;
+    // std::cout<< "GridStates_Occupied = " << GridStates_Occupied << std::endl;
 
     // normalize response
     response /= (nPoints * GridStates_Occupied);
 
-    std::cout<< "The score is = " << response << std::endl;
+    // std::cout<< "The score is = " << response << std::endl;
 
     assert(fabs(response) <= 1.0);
 

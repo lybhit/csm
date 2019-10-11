@@ -1,13 +1,8 @@
-<!--
-Provides a reasonable set of parameters for running Karto on a robot
-Assumes an 'odom_combined' frame, that provides reasonably accurate odometry
--->
-
 <launch>
   <node pkg="slam_karto" type="slam_karto" name="slam_karto">
     <!-- remap from="scan" to="scan"/-->
     <param name="odom_frame" value="odom"/>
-    <param name="rangeThreshold" value="30.0"/>
-    <rosparam command="load" file="$(find slam_karto)/config/mapper_params.yaml" />
+    <param name="rangeThreshold" value="15.0"/>
+    <param name="use_map_topic" value="true"/>
   </node>
 </launch>

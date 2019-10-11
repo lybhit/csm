@@ -17,6 +17,7 @@
 #include <stdio.h>
 #include <assert.h>
 #include <string.h>
+#include <memory>
 
 #include "Parameter.h"
 #include "Grid.h"
@@ -48,20 +49,20 @@ namespace karto
      */
     ~LaserRangeFinder()
     {
-      if(m_pOffsetPose)
-        delete m_pOffsetPose;
-      if(m_pMinimumAngle)
-        delete m_pMinimumAngle;
-      if(m_pMaximumAngle)
-        delete m_pMaximumAngle;
-      if(m_pAngularResolution)
-        delete m_pAngularResolution;
-      if(m_pMinimumRange)
-        delete m_pMinimumRange;
-      if(m_pMaximumRange)
-        delete m_pMaximumRange;
-      if(m_pRangeThreshold)
-        delete m_pRangeThreshold;
+      // if(m_pOffsetPose)
+      //   delete m_pOffsetPose;
+      // if(m_pMinimumAngle)
+      //   delete m_pMinimumAngle;
+      // if(m_pMaximumAngle)
+      //   delete m_pMaximumAngle;
+      // if(m_pAngularResolution)
+      //   delete m_pAngularResolution;
+      // if(m_pMinimumRange)
+      //   delete m_pMinimumRange;
+      // if(m_pMaximumRange)
+      //   delete m_pMaximumRange;
+      // if(m_pRangeThreshold)
+      //   delete m_pRangeThreshold;
     }
 
     /**
@@ -251,32 +252,34 @@ namespace karto
      * @param rName name of sensor - if no name is specified default name will be assigned
      * @return laser range finder
      */
-    static LaserRangeFinder* CreateLaserRangeFinder()
+    static std::shared_ptr<LaserRangeFinder> CreateLaserRangeFinder()
     {
-      LaserRangeFinder* pLrf = NULL;
+      std::shared_ptr<LaserRangeFinder> p_Laser(new LaserRangeFinder());
+      return p_Laser;
+      // return std::shared_ptr<LaserRangeFinder>(std::make_shared<LaserRangeFinder>(LaserRangeFinder()));
 
-      pLrf = new LaserRangeFinder();
+      // pLrf = new LaserRangeFinder();
 
       // Sensing range is 80 meters.
-      pLrf->m_pMinimumRange->SetValue(0.0);
-      pLrf->m_pMaximumRange->SetValue(80.0);
+      // pLrf->m_pMinimumRange->SetValue(0.0);
+      // pLrf->m_pMaximumRange->SetValue(80.0);
 
-      pLrf->m_pRangeThreshold->SetValue(30.0);
+      // pLrf->m_pRangeThreshold->SetValue(30.0);
 
-      // 180 degree range
-      pLrf->m_pMinimumAngle->SetValue(math::DegreesToRadians(-90));
-      pLrf->m_pMaximumAngle->SetValue(math::DegreesToRadians(90));
+      // // 180 degree range
+      // pLrf->m_pMinimumAngle->SetValue(math::DegreesToRadians(-90));
+      // pLrf->m_pMaximumAngle->SetValue(math::DegreesToRadians(90));
 
-      // 1.0 degree angular resolution
-      pLrf->m_pAngularResolution->SetValue(math::DegreesToRadians(1.0));
+      // // 1.0 degree angular resolution
+      // pLrf->m_pAngularResolution->SetValue(math::DegreesToRadians(1.0));
 
-      pLrf->m_NumberOfRangeReadings = 181;
+      // pLrf->m_NumberOfRangeReadings = 181;
 
-      Pose2 defaultOffset;
+      // Pose2 defaultOffset;
 
-      pLrf->SetOffsetPose(defaultOffset);
+      // pLrf->SetOffsetPose(defaultOffset);
 
-      return pLrf;
+      // return pLrf;
     }
 
   private:
@@ -284,18 +287,25 @@ namespace karto
      * Constructs a LaserRangeFinder object with given ID
      */
     LaserRangeFinder()
-      : m_NumberOfRangeReadings(0)
+      : m_NumberOfRangeReadings(0),
+        m_pOffsetPose(new Parameter<Pose2>(Pose2())),
+        m_pMinimumRange(new Parameter<kt_double>(0.0)),
+        m_pMaximumRange(new Parameter<kt_double>(80.0)),
+        m_pMinimumAngle(new Parameter<kt_double>(math::DegreesToRadians(-90))),
+        m_pMaximumAngle(new Parameter<kt_double>(math::DegreesToRadians(90))),
+        m_pAngularResolution(new Parameter<kt_double>(math::DegreesToRadians(1.0))),
+        m_pRangeThreshold(new Parameter<kt_double>(30.0))
     {
-      m_pOffsetPose = new Parameter<Pose2>();
-      m_pMinimumRange = new Parameter<kt_double>();
-      m_pMaximumRange = new Parameter<kt_double>();
+      // m_pOffsetPose = new Parameter<Pose2>();
+      // m_pMinimumRange = new Parameter<kt_double>();
+      // m_pMaximumRange = new Parameter<kt_double>();
 
-      m_pMinimumAngle = new Parameter<kt_double>();
-      m_pMaximumAngle = new Parameter<kt_double>();
+      // m_pMinimumAngle = new Parameter<kt_double>();
+      // m_pMaximumAngle = new Parameter<kt_double>();
 
-      m_pAngularResolution = new Parameter<kt_double>();
+      // m_pAngularResolution = new Parameter<kt_double>();
 
-      m_pRangeThreshold = new Parameter<kt_double>();
+      // m_pRangeThreshold = new Parameter<kt_double>();
     }
 
     /**
@@ -315,16 +325,16 @@ namespace karto
 
   private:
     // sensor m_Parameters
-    Parameter<Pose2>* m_pOffsetPose;
-    Parameter<kt_double>* m_pMinimumAngle;
-    Parameter<kt_double>* m_pMaximumAngle;
+    std::unique_ptr<Parameter<Pose2>> m_pOffsetPose;
+    std::unique_ptr<Parameter<kt_double>> m_pMinimumAngle;
+    std::unique_ptr<Parameter<kt_double>> m_pMaximumAngle;
 
-    Parameter<kt_double>* m_pAngularResolution;
+    std::unique_ptr<Parameter<kt_double>> m_pAngularResolution;
 
-    Parameter<kt_double>* m_pMinimumRange;
-    Parameter<kt_double>* m_pMaximumRange;
+    std::unique_ptr<Parameter<kt_double>> m_pMinimumRange;
+    std::unique_ptr<Parameter<kt_double>> m_pMaximumRange;
 
-    Parameter<kt_double>* m_pRangeThreshold;
+    std::unique_ptr<Parameter<kt_double>> m_pRangeThreshold;
 
     kt_int32u m_NumberOfRangeReadings;
 

@@ -11,6 +11,7 @@
 #include <iomanip>
 #include <sstream>
 #include <stdexcept>
+#include <boost/thread.hpp>
 
 #include <math.h>
 #include <float.h>
@@ -66,6 +67,7 @@ namespace karto
      */
     virtual ~LaserRangeScan()
     {
+      std::cout<< "m_pRangeReadings release." <<std::endl;
       delete [] m_pRangeReadings;
     }
 
@@ -163,7 +165,7 @@ namespace karto
     /**
      * Constructs a range scan from the given range finder with the given readings
      */
-    LocalizedRangeScan(const RangeReadingsVector& rReadings, LaserRangeFinder* pLaserRangeFinder)
+    LocalizedRangeScan(const RangeReadingsVector& rReadings, std::shared_ptr<LaserRangeFinder> pLaserRangeFinder)
       : LaserRangeScan(rReadings)
       , m_pLaserRangeFinder(pLaserRangeFinder)
       , m_IsDirty(true)
@@ -320,11 +322,31 @@ namespace karto
     /**
      * Get point readings in local coordinates
      */
-     inline const PointVectorDouble& GetPointReadings(kt_bool wantFiltered = false)
+     inline const PointVectorDouble& GetPointReadings(kt_bool wantFiltered = false) const
      {
-        Pose2 scanPose = GetSensorPose();
+        boost::shared_lock<boost::shared_mutex> lock(m_Lock);
+        if (m_IsDirty)
+        {
+          // throw away constness and do an update!
+          lock.unlock();
+          boost::unique_lock<boost::shared_mutex> uniqueLock(m_Lock);
+          const_cast<LocalizedRangeScan*>(this)->Update();
+        }
 
-        m_PointReadings.clear();
+        return m_PointReadings;
+     }
+
+  private:
+    /**
+     * Compute point readings based on range readings
+     * Only range readings within [minimum range; range threshold] are returned
+     */
+
+    virtual void Update()
+    {
+      Pose2 scanPose = GetSensorPose();
+
+      m_PointReadings.clear();
 
     // compute point readings
        kt_int32u beamNum = 0;
@@ -370,19 +392,13 @@ namespace karto
       // }
 
         m_PointReadings.push_back(point);
+      }
+
+      std::cout<< "m_PointReadings size is: "<<m_PointReadings.size()<<std::endl;
+
+      m_IsDirty = false;
+
     }
-
-    std::cout<< "m_PointReadings size is: "<<m_PointReadings.size()<<std::endl;
-
-    return m_PointReadings;
-
-  }
-
-  private:
-    /**
-     * Compute point readings based on range readings
-     * Only range readings within [minimum range; range threshold] are returned
-     */
     // virtual void Update()
     // {
     //   LaserRangeFinder* pLaserRangeFinder = GetLaserRangeFinder();
@@ -468,7 +484,7 @@ namespace karto
 
   protected:
 
-    LaserRangeFinder* m_pLaserRangeFinder;
+    std::shared_ptr<LaserRangeFinder> m_pLaserRangeFinder;
     /**
      * Average of all the point readings
      */

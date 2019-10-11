@@ -9,19 +9,26 @@ namespace karto
 template <class T>
 class Parameter
 {
-	public:
-	void SetValue(T val)
-	{
-		m_data = val;
-	}
+public:
+  Parameter(){}
+
+  Parameter(T val)
+  {
+  	SetValue(val);
+  }
+
+  void SetValue(T val)
+  {
+	m_data = val;
+  }
 	
-	T GetValue()
-	{
-		return m_data;
-	}
+  T GetValue()
+  {
+	return m_data;
+  }
 	
-	private:
-	T m_data;
+private:
+  T m_data;
 
 };
 
@@ -37,8 +44,7 @@ class Mapper
              m_pCoarseSearchAngleOffset(NULL),
              m_pMinimumAnglePenalty(NULL),
              m_pMinimumDistancePenalty(NULL),
-             m_pUseResponseExpansion(NULL)
-             {}
+             m_pUseResponseExpansion(NULL){}
 
 
 

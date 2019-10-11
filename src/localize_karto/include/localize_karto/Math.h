@@ -38,7 +38,7 @@ namespace karto
   /**
    * Lets define a small number!
    */
-  const kt_double KT_TOLERANCE  = 1e-06;
+  const kt_double KT_TOLERANCE  = 1e-05;
 
   /**
      * Lets define max value of kt_int32s (int32_t) to use it to mark invalid scans
